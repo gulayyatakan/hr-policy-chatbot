@@ -1,0 +1,1 @@
+BASE_DIR = Path(__file__).resolve().parent.parent  # e.g., /ws25_26_apip_do1_grp02

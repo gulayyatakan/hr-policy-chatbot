@@ -1,0 +1,7 @@
+chromadb==0.5.5
+sentence-transformers==2.7.0
+streamlit
+numpy
+pandas
+python-dotenv
+tiktoken
