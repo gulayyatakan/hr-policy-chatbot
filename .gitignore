@@ -2,3 +2,8 @@
 __pycache__/
 data/chroma/
 *.log
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/.env.local
+
