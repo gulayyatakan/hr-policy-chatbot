@@ -1,4 +1,8 @@
+
 # ChatBot
+=======
+# ws25_26_apip_prog3_do1_grp02_new
+
 
 
 
@@ -15,14 +19,22 @@ Already a pro? Just edit this README.md and make it your own. Want to make it ea
 
 ```
 cd existing_repo
+<<<<<<< HEAD
 git remote add origin https://code.fbi.h-da.de/wael.younes/chatbot.git
+=======
+git remote add origin https://code.fbi.h-da.de/f.buehler/ws25_26_apip_prog3_do1_grp02_new.git
+>>>>>>> c4c5eddc4c0120f814723a1f697d4b1835f69660
 git branch -M main
 git push -uf origin main
 ```
 
 ## Integrate with your tools
 
+<<<<<<< HEAD
 - [ ] [Set up project integrations](https://code.fbi.h-da.de/wael.younes/chatbot/-/settings/integrations)
+=======
+- [ ] [Set up project integrations](https://code.fbi.h-da.de/f.buehler/ws25_26_apip_prog3_do1_grp02_new/-/settings/integrations)
+>>>>>>> c4c5eddc4c0120f814723a1f697d4b1835f69660
 
 ## Collaborate with your team
 
