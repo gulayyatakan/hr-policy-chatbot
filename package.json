@@ -1,0 +1,17 @@
+{
+  "name": "ws25_26_apip_prog3_do1_grp02_new",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://code.fbi.h-da.de/f.buehler/ws25_26_apip_prog3_do1_grp02_new.git"
+  },
+  "private": true,
+  "dependencies": {
+    "vite": "^7.2.6"
+  }
+}
