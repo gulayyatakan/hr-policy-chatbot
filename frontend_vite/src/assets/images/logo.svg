@@ -1,0 +1,11 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Circle background -->
+  <circle cx="32" cy="32" r="30" fill="#0f766e" />
+  <!-- Chat bubble -->
+  <path d="M18 22h28v14c0 2.2-1.8 4-4 4H26l-6 6v-6h-2c-2.2 0-4-1.8-4-4V22z"
+        fill="white" />
+  <!-- HR letters -->
+  <text x="23" y="32" fill="#0f766e" font-size="10" font-family="system-ui, -apple-system, BlinkMacSystemFont, sans-serif" font-weight="700">
+    HR
+  </text>
+</svg>

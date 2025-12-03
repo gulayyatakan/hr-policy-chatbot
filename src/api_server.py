@@ -1,3 +1,4 @@
+from fastapi.responses import StreamingResponse
 import os
 os.environ["ANONYMIZED_TELEMETRY"] = "false"
 
@@ -26,9 +27,10 @@ app = FastAPI()
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:5173",      # Vite dev
+    "http://127.0.0.1:5173",
 ]
 
-# Allow frontend (localhost:3000 etc.) to call this API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -41,9 +43,11 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     question: str
 
+
 class SourceInfo(BaseModel):
-    source: str
+    path: str
     chunk_index: int
+
 
 class ChatResponse(BaseModel):
     answer: str
@@ -68,18 +72,27 @@ def retrieve_chunks(collection, question: str, top_k: int = 3):
     results = collection.query(
         query_embeddings=[query_emb],
         n_results=top_k,
-        include=["documents", "metadatas"],  # IDs not needed, we have metadata
+        include=["documents", "metadatas"],
     )
 
-    docs = results["documents"][0]
-    metas = results["metadatas"][0]
+    docs_list = results.get("documents", [])
+    metas_list = results.get("metadatas", [])
+
+    if not docs_list or not docs_list[0]:
+        return []
+
+    docs = docs_list[0]
+    metas = metas_list[0] if metas_list else [{}] * len(docs)
 
     chunks = []
     for doc, meta in zip(docs, metas):
+        full_path = meta.get("source", "")
+        # nice shorter path for frontend
+        rel_name = Path(full_path).name if full_path else full_path
         chunks.append(
             {
                 "content": doc,
-                "source": meta.get("source", ""),
+                "path": rel_name,
                 "chunk_index": meta.get("chunk_index", -1),
             }
         )
@@ -91,7 +104,7 @@ def build_context(chunks):
     for i, ch in enumerate(chunks, start=1):
         lines.append(
             f"### Chunk {i}\n"
-            f"Source: {ch['source']} (chunk {ch['chunk_index']})\n\n"
+            f"Source: {ch['path']} (chunk {ch['chunk_index']})\n\n"
             f"{ch['content']}\n"
         )
     return "\n\n".join(lines)
@@ -119,16 +132,80 @@ def generate_answer_with_ollama(question: str, context: str) -> str:
     return resp["message"]["content"]
 
 
-# ---------- endpoint ----------
+def stream_answer_with_ollama(question: str, context: str):
+    """
+    Generator that yields the answer text chunk by chunk from Ollama,
+    wrapped as proper SSE events.
+    """
+    system_prompt = (
+        "You are an HR assistant. Answer the question strictly based on the "
+        "provided policy context. If the answer is not in the context, say "
+        "'I cannot answer that based on the available HR policies.'\n\n"
+        "Always be concise and clear."
+    )
+
+    prompt = (
+        f"{system_prompt}\n\n"
+        f"Context:\n{context}\n\n"
+        f"Question: {question}\n\n"
+        "Answer:"
+    )
+
+    stream = ollama.chat(
+        model="phi3:mini",
+        messages=[{"role": "user", "content": prompt}],
+        stream=True,
+    )
+
+    for chunk in stream:
+        part = chunk["message"]["content"]
+        if not part:
+            continue
+        # SSE format: each "event" is prefixed by 'data: ' and ends with double newline
+        yield f"data: {part}\n\n"
+
+
+# ---------- plain JSON endpoint ----------
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     collection = get_collection()
     chunks = retrieve_chunks(collection, req.question, top_k=3)
+
+    if not chunks:
+        return ChatResponse(
+            answer="No HR policies are indexed yet. Please contact the administrator.",
+            sources=[],
+        )
+
     context = build_context(chunks)
     answer = generate_answer_with_ollama(req.question, context)
 
     sources = [
-        SourceInfo(source=c["source"], chunk_index=c["chunk_index"]) for c in chunks
+        SourceInfo(path=c["path"], chunk_index=c["chunk_index"]) for c in chunks
     ]
 
     return ChatResponse(answer=answer, sources=sources)
+
+
+# ---------- streaming endpoint for Vite frontend ----------
+@app.post("/chat-stream")
+def chat_stream(req: ChatRequest):
+    """
+    Streaming endpoint: sends the answer as SSE text chunks.
+    Frontend will use parseSSEStream(stream) to consume this.
+    """
+    collection = get_collection()
+    chunks = retrieve_chunks(collection, req.question, top_k=3)
+
+    if not chunks:
+        def fallback():
+            # still SSE format
+            yield "data: No HR policies are indexed yet. Please contact the administrator.\n\n"
+        return StreamingResponse(fallback(), media_type="text/event-stream")
+
+    context = build_context(chunks)
+
+    return StreamingResponse(
+        stream_answer_with_ollama(req.question, context),
+        media_type="text/event-stream",
+    )
