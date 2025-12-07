@@ -62,7 +62,7 @@ All HR policy source documents are stored as Markdown files under `data/hr_polic
 
 ## Project Structure
 
-\`\`\`
+```
 hr_rag_chatbot_new/
 ├── config.py                      # optional global configuration (paths, model names)
 ├── data/
@@ -84,7 +84,7 @@ hr_rag_chatbot_new/
     ├── rag_backend.py             # earlier CLI retrieval script (debugging)
     ├── rag_chat_ollama.py         # earlier terminal chat with Ollama + RAG
     └── chatbot.py                 # simple local Ollama chat (no RAG)
-\`\`\`
+```
 
 ## Prerequisites
 
